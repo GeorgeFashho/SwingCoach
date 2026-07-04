@@ -20,9 +20,24 @@ final class PlaybackViewModel {
 
     static let availableRates: [Float] = [0.25, 0.5, 1.0]
 
+    // MARK: - Pose overlay state
+
+    /// Smoothed pose frames for display; nil until detected or loaded.
+    var poseFrames: [PoseFrameData]?
+    var isOverlayEnabled = true
+    var isDetectingPose = false
+    var detectionProgress: Double = 0
+    var detectionErrorMessage: String?
+    /// The video's display size (naturalSize with preferredTransform
+    /// applied) — needed to aspect-fit the overlay onto the player.
+    var videoDisplaySize: CGSize = .zero
+
+    private let videoURL: URL
+    private let poseDetectionService = PoseDetectionService()
     private var timeObserver: Any?
 
     init(videoURL: URL) {
+        self.videoURL = videoURL
         player = AVPlayer(url: videoURL)
     }
 
@@ -32,6 +47,15 @@ final class PlaybackViewModel {
         Task {
             if let duration = try? await player.currentItem?.asset.load(.duration) {
                 self.duration = duration.seconds
+            }
+            if let track = try? await player.currentItem?.asset.loadTracks(withMediaType: .video).first,
+               let (naturalSize, transform) = try? await track.load(.naturalSize, .preferredTransform) {
+                self.videoDisplaySize = CoordinateTransform.orientedSize(naturalSize: naturalSize,
+                                                                         preferredTransform: transform)
+            }
+            if self.poseFrames == nil,
+               let saved = await self.poseDetectionService.loadSavedPoses(for: self.videoURL) {
+                self.poseFrames = PoseSmoothing.smoothed(saved)
             }
         }
 
@@ -83,5 +107,55 @@ final class PlaybackViewModel {
         currentTime = seconds
         let time = CMTime(seconds: seconds, preferredTimescale: 600)
         player.seek(to: time, toleranceBefore: .zero, toleranceAfter: .zero)
+    }
+
+    // MARK: - Pose detection
+
+    /// Runs pose detection over the whole video in the background, saving
+    /// the result alongside the video and enabling the skeleton overlay.
+    func detectPose() {
+        guard !isDetectingPose else { return }
+        isDetectingPose = true
+        detectionProgress = 0
+        detectionErrorMessage = nil
+        Task {
+            do {
+                let raw = try await poseDetectionService.detectPoses(in: videoURL) { value in
+                    Task { @MainActor in self.detectionProgress = value }
+                }
+                poseFrames = PoseSmoothing.smoothed(raw)
+                isOverlayEnabled = true
+            } catch {
+                detectionErrorMessage = error.localizedDescription
+            }
+            isDetectingPose = false
+        }
+    }
+
+    /// The pose frame nearest to the current playback time, or nil when the
+    /// overlay is hidden or no pose data exists yet.
+    var currentPoseFrame: PoseFrameData? {
+        guard isOverlayEnabled, let poseFrames, !poseFrames.isEmpty else { return nil }
+        return Self.nearestFrame(in: poseFrames, to: currentTime)
+    }
+
+    /// Binary search for the frame whose timestamp is closest to `time`
+    /// (frames are in presentation order, so timestamps are ascending).
+    private static func nearestFrame(in frames: [PoseFrameData], to time: Double) -> PoseFrameData {
+        var low = 0
+        var high = frames.count - 1
+        while low < high {
+            let mid = (low + high) / 2
+            if frames[mid].timestamp < time {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        // `low` is the first frame at/after `time`; its predecessor may be closer.
+        if low > 0, abs(frames[low - 1].timestamp - time) < abs(frames[low].timestamp - time) {
+            return frames[low - 1]
+        }
+        return frames[low]
     }
 }

@@ -18,8 +18,13 @@ struct PlaybackView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            PlayerLayerView(player: viewModel.player)
-                .background(.black)
+            ZStack {
+                PlayerLayerView(player: viewModel.player)
+                if let poseFrame = viewModel.currentPoseFrame, viewModel.videoDisplaySize != .zero {
+                    PoseOverlayView(frame: poseFrame, videoSize: viewModel.videoDisplaySize)
+                }
+            }
+            .background(.black)
 
             controls
                 .padding()
@@ -36,6 +41,8 @@ struct PlaybackView: View {
 
     private var controls: some View {
         VStack(spacing: 16) {
+            poseControls
+
             HStack(spacing: 8) {
                 Text(timeString(viewModel.currentTime))
                     .font(.caption.monospacedDigit())
@@ -69,6 +76,43 @@ struct PlaybackView: View {
                 } label: {
                     Image(systemName: viewModel.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 52))
+                }
+            }
+        }
+    }
+
+    /// Pose detection entry point: a "Detect Pose" button until joint data
+    /// exists, a progress bar while Vision processes the video, and a
+    /// show/hide toggle once the skeleton is available.
+    @ViewBuilder
+    private var poseControls: some View {
+        if viewModel.isDetectingPose {
+            VStack(spacing: 4) {
+                ProgressView(value: viewModel.detectionProgress)
+                Text("Detecting pose… \(Int(viewModel.detectionProgress * 100))%")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } else if viewModel.poseFrames != nil {
+            Toggle(isOn: Binding(
+                get: { viewModel.isOverlayEnabled },
+                set: { viewModel.isOverlayEnabled = $0 }
+            )) {
+                Label("Skeleton overlay", systemImage: "figure.golf")
+            }
+        } else {
+            VStack(spacing: 4) {
+                Button {
+                    viewModel.detectPose()
+                } label: {
+                    Label("Detect Pose", systemImage: "figure.golf")
+                }
+                .buttonStyle(.borderedProminent)
+
+                if let message = viewModel.detectionErrorMessage {
+                    Text(message)
+                        .font(.caption)
+                        .foregroundStyle(.red)
                 }
             }
         }
