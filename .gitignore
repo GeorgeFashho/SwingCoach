@@ -1,0 +1,22 @@
+# Xcode
+build/
+DerivedData/
+*.xcuserstate
+
+# Xcode per-user data (workspace/scheme UI state)
+xcuserdata/
+*.xcscmblueprint
+*.xccheckout
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# macOS
+.DS_Store
+
+# App-generated content (recorded swing videos / pose data live in the
+# app's Documents dir on-device; never in the repo)
+
+# OMC orchestration state (local only)
+.omc/

@@ -5,51 +5,29 @@
 //  Created by George Fashho on 7/3/26.
 //
 
-import SwiftUI
 import SwiftData
+import SwiftUI
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
-                    }
-                }
-                .onDelete(perform: deleteItems)
+        TabView {
+            Tab("Record", systemImage: "video.fill") {
+                CaptureView()
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
+            Tab("History", systemImage: "clock.arrow.circlepath") {
+                NavigationStack {
+                    HistoryView()
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            Tab("Progress", systemImage: "chart.line.uptrend.xyaxis") {
+                NavigationStack {
+                    ContentUnavailableView(
+                        "Progress Coming Soon",
+                        systemImage: "chart.line.uptrend.xyaxis",
+                        description: Text("Once swing analysis is built, your score trends will appear here.")
+                    )
+                    .navigationTitle("Progress")
+                }
             }
         }
     }
@@ -57,5 +35,5 @@ struct ContentView: View {
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: SwingSession.self, inMemory: true)
 }

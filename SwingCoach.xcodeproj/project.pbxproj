@@ -400,6 +400,8 @@
 				DEVELOPMENT_TEAM = G23V9H74AK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SwingCoach records video of your golf swing so it can analyze your form.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone is used while recording swing videos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -432,6 +434,8 @@
 				DEVELOPMENT_TEAM = G23V9H74AK;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "SwingCoach records video of your golf swing so it can analyze your form.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "The microphone is used while recording swing videos.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
