@@ -6,14 +6,24 @@
 import SwiftUI
 
 /// Explains where to place the phone for each camera angle, in plain English.
+/// When opened from the capture screen, `focusAngle` lifts the angle the
+/// user is about to record to the top and labels it.
 struct CameraAngleGuideView: View {
+    var focusAngle: CameraAngle?
+
     @Environment(\.dismiss) private var dismiss
+
+    /// The focused angle first, then the rest in their usual order.
+    private var orderedAngles: [CameraAngle] {
+        guard let focusAngle else { return CameraAngle.allCases }
+        return [focusAngle] + CameraAngle.allCases.filter { $0 != focusAngle }
+    }
 
     var body: some View {
         NavigationStack {
             List {
-                ForEach(CameraAngle.allCases) { angle in
-                    Section(angle.displayName) {
+                ForEach(orderedAngles) { angle in
+                    Section {
                         HStack(alignment: .top, spacing: 16) {
                             Image(systemName: angle == .faceOn ? "person.fill" : "figure.golf")
                                 .font(.largeTitle)
@@ -23,6 +33,12 @@ struct CameraAngleGuideView: View {
                                 .font(.body)
                         }
                         .padding(.vertical, 4)
+                    } header: {
+                        if angle == focusAngle {
+                            Text("\(angle.displayName) — you're set to record this")
+                        } else {
+                            Text(angle.displayName)
+                        }
                     }
                 }
 

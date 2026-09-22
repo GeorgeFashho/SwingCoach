@@ -13,6 +13,7 @@ struct SwingCoachApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             SwingSession.self,
+            AnalysisResult.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

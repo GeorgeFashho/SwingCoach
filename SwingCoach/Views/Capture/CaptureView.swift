@@ -20,19 +20,28 @@ struct CaptureView: View {
                 Color.black.ignoresSafeArea()
             }
 
-            VStack {
-                if let errorMessage = viewModel.errorMessage {
-                    Text(errorMessage)
-                        .font(.callout)
-                        .foregroundStyle(.white)
-                        .padding()
-                        .background(.red.opacity(0.8), in: RoundedRectangle(cornerRadius: 12))
-                        .padding()
+            if viewModel.isPermissionDenied {
+                permissionDeniedView
+            } else {
+                VStack {
+                    if viewModel.isRecording {
+                        recordingPill
+                    }
+
+                    if let errorMessage = viewModel.errorMessage {
+                        Text(errorMessage)
+                            .font(.callout)
+                            .foregroundStyle(.white)
+                            .padding()
+                            .background(.red.opacity(0.85),
+                                        in: RoundedRectangle(cornerRadius: Radius.m, style: .continuous))
+                            .padding()
+                    }
+
+                    Spacer()
+
+                    controls
                 }
-
-                Spacer()
-
-                controls
             }
         }
         .task {
@@ -42,51 +51,165 @@ struct CaptureView: View {
             viewModel.stopCamera()
         }
         .sheet(isPresented: $viewModel.showAngleGuide) {
-            CameraAngleGuideView()
+            CameraAngleGuideView(focusAngle: viewModel.selectedAngle)
+        }
+        .overlay {
+            if let countdown = viewModel.countdown {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    VStack(spacing: Space.m) {
+                        Text("\(countdown)")
+                            .font(.metric(128, .bold))
+                            .monospacedDigit()
+                            .foregroundStyle(.white)
+                            .contentTransition(.numericText(countsDown: true))
+                        Text("Walk to your ball and get set")
+                            .font(.headline)
+                            .foregroundStyle(.white.opacity(0.9))
+                    }
+                    .shadow(radius: 8)
+                }
+                .transition(.opacity)
+            }
+        }
+        .animation(.snappy, value: viewModel.countdown)
+        .sensoryFeedback(.impact(weight: .medium), trigger: viewModel.countdown)
+        .fullScreenCover(isPresented: Binding(
+            get: { viewModel.lastRecordedSession != nil },
+            set: { if !$0 { viewModel.lastRecordedSession = nil } }
+        )) {
+            if let session = viewModel.lastRecordedSession {
+                NavigationStack {
+                    PlaybackView(session: session)
+                        .toolbar {
+                            ToolbarItem(placement: .confirmationAction) {
+                                Button("Done") { viewModel.lastRecordedSession = nil }
+                            }
+                        }
+                }
+            }
         }
     }
 
+    /// Shown instead of the dead black preview when camera access is off:
+    /// explains why and deep-links straight to the app's Settings page.
+    private var permissionDeniedView: some View {
+        ContentUnavailableView {
+            Label("Camera Access Is Off", systemImage: "video.slash")
+        } description: {
+            Text("SwingCoach needs the camera to record your swing. Turn it on in Settings and come back — your swings stay on your phone.")
+        } actions: {
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            .buttonStyle(.borderedProminent)
+        }
+        .colorScheme(.dark)
+    }
+
+    private var isIdle: Bool { !viewModel.isRecording && viewModel.countdown == nil }
+
     private var controls: some View {
-        VStack(spacing: 16) {
-            if !viewModel.isRecording {
+        VStack(spacing: Space.l) {
+            if isIdle {
+                statusHint
+
                 Picker("Camera Angle", selection: $viewModel.selectedAngle) {
                     ForEach(CameraAngle.allCases) { angle in
                         Text(angle.displayName).tag(angle)
                     }
                 }
                 .pickerStyle(.segmented)
-                .padding(.horizontal, 40)
+                .padding(.horizontal, Space.xxl)
+
+                clubPicker
 
                 Button {
                     viewModel.showAngleGuide = true
                 } label: {
                     Label("Where do I put my phone?", systemImage: "questionmark.circle")
-                        .font(.footnote)
+                        .font(.footnote.weight(.medium))
                         .foregroundStyle(.white)
                 }
             }
 
-            Button {
-                viewModel.toggleRecording(modelContext: modelContext)
-            } label: {
-                ZStack {
+            recordButton
+        }
+        .padding(.bottom, Space.xl)
+    }
+
+    /// `.menu` style (not segmented, like the angle picker) since 15 clubs
+    /// would overflow a segmented control.
+    private var clubPicker: some View {
+        Picker("Club", selection: $viewModel.selectedClub) {
+            ForEach(GolfClub.allCases) { club in
+                Text(club.displayName).tag(club)
+            }
+        }
+        .pickerStyle(.menu)
+        .tint(.white)
+    }
+
+    /// One-line reassurance so a solo beginner knows what to do before tapping.
+    private var statusHint: some View {
+        Text("Prop your phone so it can see you head to toe, then tap — I'll count you in.")
+            .font(.footnote)
+            .foregroundStyle(.white)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, Space.l)
+            .padding(.vertical, Space.s)
+            .background(.ultraThinMaterial,
+                        in: RoundedRectangle(cornerRadius: Radius.l, style: .continuous))
+            .padding(.horizontal, Space.xl)
+    }
+
+    /// Fairway-green "start" when idle; the universal red rounded-square when
+    /// recording (red here means "recording", never "critical" — severity
+    /// colors never appear on this screen).
+    private var recordButton: some View {
+        Button {
+            viewModel.handleRecordButton(modelContext: modelContext)
+        } label: {
+            ZStack {
+                Circle()
+                    .stroke(.white, lineWidth: 4)
+                    .frame(width: 76, height: 76)
+                if viewModel.isRecording {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Color(.systemRed))
+                        .frame(width: 32, height: 32)
+                } else {
                     Circle()
-                        .stroke(.white, lineWidth: 4)
-                        .frame(width: 72, height: 72)
-                    if viewModel.isRecording {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(.red)
-                            .frame(width: 32, height: 32)
-                    } else {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 58, height: 58)
-                    }
+                        .fill(Color.brandPrimary)
+                        .frame(width: 62, height: 62)
+                        .overlay {
+                            Image(systemName: "figure.golf")
+                                .font(.title2)
+                                .foregroundStyle(.white)
+                        }
                 }
             }
-            .disabled(!viewModel.isSessionRunning)
         }
-        .padding(.bottom, 24)
+        .disabled(!viewModel.isSessionRunning)
+        .animation(.snappy, value: viewModel.isRecording)
+    }
+
+    /// HIG-style recording indicator shown while capturing.
+    private var recordingPill: some View {
+        HStack(spacing: Space.s) {
+            Circle()
+                .fill(Color(.systemRed))
+                .frame(width: 10, height: 10)
+            Text("Recording — take your normal swing")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white)
+        }
+        .padding(.horizontal, Space.m)
+        .padding(.vertical, Space.s)
+        .background(.ultraThinMaterial, in: Capsule())
+        .padding(.top, Space.s)
     }
 }
 

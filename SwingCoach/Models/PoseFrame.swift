@@ -3,6 +3,7 @@
 //  SwingCoach
 //
 
+import CoreGraphics
 import Foundation
 import Vision
 
@@ -21,6 +22,52 @@ nonisolated struct PoseFrameData: Codable {
 
     func joint(_ name: BodyJoint) -> JointPoint? {
         joints[name.rawValue]
+    }
+}
+
+nonisolated extension PoseFrameData {
+
+    /// Median distance between two joints over the frames whose timestamps
+    /// fall in `range`, using only frames where both joints are confidently
+    /// detected. The scale reference for displacement measurements (e.g.
+    /// shoulder width, stance width). Returns nil when fewer than
+    /// `minSamples` confident pairs exist or the median is degenerate.
+    static func medianJointDistance(in frames: [PoseFrameData],
+                                    between first: BodyJoint,
+                                    and second: BodyJoint,
+                                    during range: ClosedRange<TimeInterval>,
+                                    minSamples: Int = 1) -> CGFloat? {
+        var distances: [CGFloat] = []
+        for frame in frames where range.contains(frame.timestamp) {
+            guard let a = frame.joint(first),
+                  let b = frame.joint(second),
+                  a.confidence >= Constants.minimumJointConfidence,
+                  b.confidence >= Constants.minimumJointConfidence else { continue }
+            distances.append(hypot(a.x - b.x, a.y - b.y))
+        }
+        guard distances.count >= max(minSamples, 1) else { return nil }
+        let median = distances.sorted()[distances.count / 2]
+        return median > 0.01 ? median : nil
+    }
+
+    /// Median spine tilt from vertical (degrees, 0 = standing straight up)
+    /// over the frames in `range`, from the root→neck vector. Returns nil
+    /// when fewer than `minSamples` frames have a confident neck and root.
+    static func medianSpineTilt(in frames: [PoseFrameData],
+                                during range: ClosedRange<TimeInterval>,
+                                minSamples: Int = Constants.minCheckSamples) -> Double? {
+        var tilts: [Double] = []
+        for frame in frames where range.contains(frame.timestamp) {
+            guard let neck = frame.joint(.neck),
+                  let root = frame.joint(.root),
+                  neck.confidence >= Constants.minimumJointConfidence,
+                  root.confidence >= Constants.minimumJointConfidence,
+                  let tilt = AngleCalculator.angleFromVertical(from: root.location,
+                                                               to: neck.location) else { continue }
+            tilts.append(tilt)
+        }
+        guard tilts.count >= max(minSamples, 1) else { return nil }
+        return tilts.sorted()[tilts.count / 2]
     }
 }
 

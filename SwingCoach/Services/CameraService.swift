@@ -15,14 +15,11 @@ import Foundation
 nonisolated final class CameraService: NSObject, @unchecked Sendable {
 
     enum CameraError: LocalizedError {
-        case permissionDenied
         case noCameraAvailable
         case configurationFailed
 
         var errorDescription: String? {
             switch self {
-            case .permissionDenied:
-                "Camera access is turned off. Enable it in Settings > SwingCoach to record your swing."
             case .noCameraAvailable:
                 "No camera was found on this device."
             case .configurationFailed:

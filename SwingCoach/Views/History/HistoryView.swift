@@ -10,6 +10,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.switchToRecordTab) private var switchToRecordTab
     @Query(sort: \SwingSession.date, order: .reverse) private var sessions: [SwingSession]
 
     @State private var pickedVideo: PhotosPickerItem?
@@ -18,35 +19,61 @@ struct HistoryView: View {
     /// the user to say which camera angle it was filmed from.
     @State private var pendingImport: (fileName: String, duration: TimeInterval)?
     @State private var importErrorMessage: String?
+    @State private var clubFilter: GolfClub?
 
     var body: some View {
         Group {
             if sessions.isEmpty {
-                ContentUnavailableView(
-                    "No Swings Yet",
-                    systemImage: "figure.golf",
-                    description: Text("Record your first swing from the Record tab, or import a video with the button above.")
-                )
+                ContentUnavailableView {
+                    Label("No Swings Yet", systemImage: "figure.golf")
+                } description: {
+                    Text("Record your first swing and it'll show up here — every swing saved, so you can look back and see how far you've come.")
+                } actions: {
+                    Button("Record a Swing") { switchToRecordTab() }
+                        .buttonStyle(PrimaryButtonStyle())
+                        .frame(maxWidth: 260)
+                }
             } else {
                 List {
-                    ForEach(sessions) { session in
-                        NavigationLink {
-                            PlaybackView(session: session)
-                        } label: {
-                            SessionRow(session: session)
+                    ForEach(filteredGroupedSessions, id: \.day) { group in
+                        Section {
+                            ForEach(group.sessions) { session in
+                                NavigationLink {
+                                    PlaybackView(session: session)
+                                } label: {
+                                    SessionRow(session: session)
+                                }
+                            }
+                            .onDelete { offsets in
+                                deleteSessions(at: offsets, in: group.sessions)
+                            }
+                        } header: {
+                            Text(group.day, format: .dateTime.weekday(.wide).month().day())
                         }
                     }
-                    .onDelete(perform: deleteSessions)
                 }
             }
         }
         .navigationTitle("History")
         .toolbar {
-            if isImporting {
-                ProgressView()
-            } else {
-                PhotosPicker(selection: $pickedVideo, matching: .videos) {
-                    Label("Import Video", systemImage: "square.and.arrow.down")
+            ToolbarItem(placement: .navigationBarLeading) {
+                Menu {
+                    Button("All Clubs") { clubFilter = nil }
+                    Divider()
+                    ForEach(GolfClub.allCases) { club in
+                        Button(club.displayName) { clubFilter = club }
+                    }
+                } label: {
+                    Label(clubFilter?.displayName ?? "All Clubs", systemImage: "line.3.horizontal.decrease.circle")
+                }
+            }
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isImporting {
+                    ProgressView()
+                } else {
+                    PhotosPicker(selection: $pickedVideo, matching: .videos) {
+                        Label("Import Video", systemImage: "square.and.arrow.down")
+                    }
                 }
             }
         }
@@ -92,8 +119,12 @@ struct HistoryView: View {
                 throw VideoImportService.ImportError.unreadable
             }
             pendingImport = try await VideoImportService.finalizeImport(of: video.url)
-        } catch {
+        } catch let error as VideoImportService.ImportError {
             importErrorMessage = error.localizedDescription
+        } catch {
+            // Unexpected write failures (e.g. disk full) — friendlier than
+            // the raw Cocoa error string.
+            importErrorMessage = "That video couldn't be saved. Check that you have free storage space and try again."
         }
     }
 
@@ -101,7 +132,9 @@ struct HistoryView: View {
         guard let pendingImport else { return }
         let session = SwingSession(cameraAngle: angle,
                                    videoFileName: pendingImport.fileName,
-                                   duration: pendingImport.duration)
+                                   duration: pendingImport.duration,
+                                   handedness: .stored)
+        session.golfClub = GolfClub.storedDefault
         modelContext.insert(session)
         self.pendingImport = nil
     }
@@ -115,11 +148,26 @@ struct HistoryView: View {
         self.pendingImport = nil
     }
 
-    private func deleteSessions(offsets: IndexSet) {
+    /// Sessions grouped by calendar day, newest day first, after applying
+    /// `clubFilter`. Within a day the sessions keep the query's newest-first
+    /// order.
+    private var filteredGroupedSessions: [(day: Date, sessions: [SwingSession])] {
+        let calendar = Calendar.current
+        let groups = Dictionary(grouping: Self.filter(sessions, by: clubFilter)) { calendar.startOfDay(for: $0.date) }
+        return groups.keys.sorted(by: >).map { (day: $0, sessions: groups[$0]!) }
+    }
+
+    /// Pure, testable club filter: `nil` returns every session; a specific
+    /// club returns only sessions whose `golfClub` matches (nil-club and
+    /// unrecognized-raw sessions are excluded, and only appear under "All").
+    static func filter(_ sessions: [SwingSession], by club: GolfClub?) -> [SwingSession] {
+        guard let club else { return sessions }
+        return sessions.filter { $0.golfClub == club }
+    }
+
+    private func deleteSessions(at offsets: IndexSet, in daySessions: [SwingSession]) {
         for index in offsets {
-            let session = sessions[index]
-            try? FileManager.default.removeItem(at: session.videoURL)
-            modelContext.delete(session)
+            SessionDeletion.delete(daySessions[index], in: modelContext)
         }
     }
 }
@@ -132,12 +180,14 @@ private struct SessionRow: View {
             VideoThumbnailView(videoURL: session.videoURL)
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(session.date, format: .dateTime.month().day().hour().minute())
+                Text(session.date, format: .dateTime.hour().minute())
                     .font(.headline)
                 HStack(spacing: 8) {
                     Text(session.angle.displayName)
                     Text("·")
                     Text(String(format: "%.1fs", session.duration))
+                    Text("·")
+                    Text(session.clubLabel)
                 }
                 .font(.subheadline)
                 .foregroundStyle(.secondary)

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Merged into the generated Info.plist (GENERATE_INFOPLIST_FILE=YES).
+	     Only for keys Xcode's INFOPLIST_KEY_* injection doesn't support. -->
+	<key>UIFileSharingEnabled</key>
+	<true/>
+	<!-- Branded launch screen: fairway-green background + centered white logo
+	     mark, so the green app icon "expands" into the app on cold launch. -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string>LaunchBackground</string>
+		<key>UIImageName</key>
+		<string>LaunchLogo</string>
+		<key>UIImageRespectsSafeAreaInsets</key>
+		<false/>
+	</dict>
+</dict>
+</plist>
