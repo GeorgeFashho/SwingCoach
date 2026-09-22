@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 250" width="1200" height="250" role="img" aria-label="Pipeline: record, detect pose, split phases, score checks, coach">
+  <rect width="1200" height="250" fill="#0F2A1C"/>
+  <text x="40" y="44" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="18" font-weight="700" fill="#9BE8C0" letter-spacing="2">HOW A SWING BECOMES FEEDBACK</text>
+
+  <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
+    <!-- 1 -->
+    <rect x="40" y="76" width="200" height="118" rx="16" fill="#17452C" stroke="#35C878" stroke-opacity="0.35" stroke-width="1.5"/>
+    <circle cx="68" cy="104" r="13" fill="#35C878"/>
+    <text x="68" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#0F2A1C">1</text>
+    <text x="92" y="109" font-size="17" font-weight="700" fill="#FFFFFF">Record</text>
+    <text x="64" y="140" font-size="14" fill="#9BE8C0">120 fps, up to 12s</text>
+    <text x="64" y="162" font-size="14" fill="#9BE8C0">face-on or down-the-line</text>
+
+    <!-- 2 -->
+    <rect x="270" y="76" width="200" height="118" rx="16" fill="#17452C" stroke="#35C878" stroke-opacity="0.35" stroke-width="1.5"/>
+    <circle cx="298" cy="104" r="13" fill="#35C878"/>
+    <text x="298" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#0F2A1C">2</text>
+    <text x="322" y="109" font-size="17" font-weight="700" fill="#FFFFFF">Detect pose</text>
+    <text x="294" y="140" font-size="14" fill="#9BE8C0">Apple Vision, every</text>
+    <text x="294" y="162" font-size="14" fill="#9BE8C0">frame + club shaft</text>
+
+    <!-- 3 -->
+    <rect x="500" y="76" width="200" height="118" rx="16" fill="#17452C" stroke="#35C878" stroke-opacity="0.35" stroke-width="1.5"/>
+    <circle cx="528" cy="104" r="13" fill="#35C878"/>
+    <text x="528" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#0F2A1C">3</text>
+    <text x="552" y="109" font-size="17" font-weight="700" fill="#FFFFFF">Split phases</text>
+    <text x="524" y="140" font-size="14" fill="#9BE8C0">address, top,</text>
+    <text x="524" y="162" font-size="14" fill="#9BE8C0">impact, follow-through</text>
+
+    <!-- 4 -->
+    <rect x="730" y="76" width="200" height="118" rx="16" fill="#17452C" stroke="#35C878" stroke-opacity="0.35" stroke-width="1.5"/>
+    <circle cx="758" cy="104" r="13" fill="#35C878"/>
+    <text x="758" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#0F2A1C">4</text>
+    <text x="782" y="109" font-size="17" font-weight="700" fill="#FFFFFF">Score</text>
+    <text x="754" y="140" font-size="14" fill="#9BE8C0">6 checks, 0&#8211;100,</text>
+    <text x="754" y="162" font-size="14" fill="#9BE8C0">only what the angle sees</text>
+
+    <!-- 5 -->
+    <rect x="960" y="76" width="200" height="118" rx="16" fill="#1F7A46" stroke="#9BE8C0" stroke-opacity="0.6" stroke-width="1.5"/>
+    <circle cx="988" cy="104" r="13" fill="#FFFFFF"/>
+    <text x="988" y="109" text-anchor="middle" font-size="14" font-weight="700" fill="#1F7A46">5</text>
+    <text x="1012" y="109" font-size="17" font-weight="700" fill="#FFFFFF">Coach</text>
+    <text x="984" y="140" font-size="14" fill="#DFF7E9">one fix to work on,</text>
+    <text x="984" y="162" font-size="14" fill="#DFF7E9">tracked across sessions</text>
+  </g>
+
+  <!-- arrows -->
+  <g stroke="#35C878" stroke-width="2.5" stroke-linecap="round" fill="none" stroke-opacity="0.75">
+    <path d="M246 135 L 258 135"/><path d="M253 130 L 258 135 L 253 140"/>
+    <path d="M476 135 L 488 135"/><path d="M483 130 L 488 135 L 483 140"/>
+    <path d="M706 135 L 718 135"/><path d="M713 130 L 718 135 L 713 140"/>
+    <path d="M936 135 L 948 135"/><path d="M943 130 L 948 135 L 943 140"/>
+  </g>
+
+  <text x="40" y="228" font-family="Helvetica Neue, Helvetica, Arial, sans-serif" font-size="14" fill="#6FCF97">Every step runs on the phone. No uploads, no server, no account.</text>
+</svg>
