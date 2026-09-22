@@ -113,5 +113,5 @@ Videos, pose data, and results never leave the device. They live in the app's ow
 ---
 
 <div align="center">
-<sub>A passion project by <a href="https://github.com/GeorgeFashho">George Fashho</a> — built on evenings and weekends.</sub>
+<sub>A passion project by <a href="https://github.com/GeorgeFashho">George Fashho</a>.</sub>
 </div>
